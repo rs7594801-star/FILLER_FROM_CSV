@@ -1,309 +1,328 @@
-# 📄 CSV Form Data Extractor — Code Explanation
+# 🤖 End-to-End Web Form Automation System
 
-This project is a Python-based automation script that extracts **form fields from a website** and saves them into a structured CSV file.
+A complete automation pipeline that:
 
----
-
-## 🧠 Core Idea
-
-The script:
-
-1. Opens a webpage using Playwright
-2. Extracts HTML content
-3. Parses it using BeautifulSoup
-4. Identifies form fields (input, select, text area)
-5. Finds their labels intelligently
-6. Saves everything into a CSV file
+1. 🔍 Extracts form fields from any website
+2. 📄 Converts them into a structured CSV
+3. ✍️ Uses that CSV to automatically fill and submit forms
 
 ---
 
-## 📦 Libraries Used
+## 🧠 Project Overview
 
-```python
-import csv
-from bs4 import BeautifulSoup
-from playwright.sync_api import sync_playwright
-```
+This project is divided into **two main modules**:
 
-* `csv` → to create and write CSV files
-* `BeautifulSoup` → to parse HTML content
-* `Playwright` → to automate browser and load webpage
+### 🔹 1. Form Structure Extractor
 
----
-
-## 🌐 Target URL
-
-```python
-TARGET_URL = "https://www.digitalunite.com/practice-webform-learners"
-```
-
-This is the website from which form fields are extracted.
+* Scans a webpage
+* Detects input fields
+* Extracts labels, selectors, and types
+* Saves everything into a CSV file
 
 ---
 
-## 💾 Function: save_to_csv()
+### 🔹 2. Automated Form Filler
 
-```python
-def save_to_csv(data, filename="website_structure.csv"):
-```
+* Reads the CSV file
+* Uses Playwright to open the website
+* Fills form fields automatically
+* Submits the form multiple times
 
-### 🔹 Purpose:
+---
 
-Stores extracted form data into a CSV file.
+## 🔄 Full Workflow
 
-### 🔹 How it works:
-
-* Opens/creates a CSV file
-* Writes column headers:
-
-  * Field Name
-  * Selector
-  * Type
-  * Your Answer
-* Iterates over extracted data
-* Writes each field as a row
-
-### 🔹 Output:
-
-```csv
-Field Name, Selector, Type, Your Answer
-Name, #name, text,
-Email, #email, email,
+```text
+Target Website
+     ↓
+[Extractor Script]
+     ↓
+CSV File (structure)
+     ↓ (you fill answers)
+[Form Filler Script]
+     ↓
+Automated Form Submission
+     ↓
+Screenshots + Logs
 ```
 
 ---
 
-## 🏷️ Function: get_preceding_label()
+## 📦 Technologies Used
 
 ```python
-def get_preceding_label(field, soup):
+Python
+Playwright
+BeautifulSoup
+CSV Module
 ```
 
-### 🔹 Purpose:
-
-Finds the **label (name)** associated with a form field.
-
-### 🔍 Logic Breakdown:
-
-1. **Check label using `for` attribute**
-
-```python
-label = soup.find("label", attrs={"for": field_id})
-```
-
-2. **Check if input is inside a label**
-
-```python
-parent = field.find_parent("label")
-```
-
-3. **Check text before field**
-
-* Looks at previous sibling elements
-* Extracts meaningful text
-
-4. **Check grandparent**
-
-* Handles complex HTML structures
-
-5. **Fallback options**
-
-```python
-field.get("aria-label")
-field.get("placeholder")
-```
-
-### 🔹 Why needed?
-
-Websites use different structures → this makes extraction **robust**
+* **Playwright** → browser automation
+* **BeautifulSoup** → HTML parsing
+* **CSV** → structured data storage
 
 ---
 
-## 🔍 Function: extract_fields()
+## 📂 Project Structure
 
-```python
-def extract_fields(html):
 ```
-
-### 🔹 Purpose:
-
-Extracts all usable form fields from HTML.
-
-### 🔹 Steps:
-
-1. Parse HTML:
-
-```python
-soup = BeautifulSoup(html, "html.parser")
-```
-
-2. Initialize:
-
-* `seen` → avoids duplicate labels
-* `fields` → stores results
-
-3. Skip unwanted inputs:
-
-```python
-skip_types = {"hidden", "submit", "button", "reset", "image"}
-```
-
-4. Loop through fields:
-
-```python
-soup.find_all(["input", "select", "textarea"])
-```
-
-5. Get label:
-
-```python
-label = get_preceding_label(field, soup)
-```
-
-6. Avoid duplicates:
-
-```python
-if not label or label in seen:
-    continue
-```
-
-7. Determine selector:
-
-```python
-# Prefer ID
-"#id"
-
-# Else use name
-[name='field_name']
-```
-
-8. Store data:
-
-```python
-fields.append({
-    "label": label,
-    "selector": selector,
-    "type": field_type,
-})
+project/
+│
+├── extractor.py        # Extracts form fields
+├── filler.py           # Fills & submits forms
+├── website_structure.csv
+├── screenshots/
+│   ├── form_filled_1.png
+│   ├── form_submitted_1.png
+│
+└── README.md
 ```
 
 ---
 
-## 🎮 Function: main()
+# 🔍 MODULE 1: Form Structure Extractor
 
-```python
-def main():
-```
+## 🎯 Purpose
 
-### 🔹 Purpose:
+Extract all form fields from a webpage and store them in CSV format.
 
-Controls the entire execution flow.
+---
 
-### 🔹 Steps:
+## ⚙️ How It Works
 
-1. Start Playwright:
-
-```python
-with sync_playwright() as p:
-```
-
-2. Launch browser:
-
-```python
-browser = p.chromium.launch(headless=True)
-```
-
-3. Open page:
+### Step 1: Open Website
 
 ```python
 page.goto(TARGET_URL)
 ```
 
-4. Wait for page to load:
+### Step 2: Get HTML Content
 
 ```python
-page.wait_for_selector("form, input, select, textarea")
+html = page.content()
 ```
 
-5. Extract fields:
+### Step 3: Parse HTML
 
 ```python
-data = extract_fields(page.content())
+BeautifulSoup(html, "html.parser")
 ```
 
-6. Save to CSV:
+### Step 4: Find Fields
 
 ```python
-save_to_csv(data)
+soup.find_all(["input", "select", "textarea"])
 ```
-
-7. Print results:
-
-python
-for item in data:
-    print(item["label"])
-
-
-8. Handle errors:
-
-python
-
-
-9. Close browser:
-
-python
-browser.close()
-
-
-## ▶️ Entry Point
-
-python
-if __name__ == "__main__":
-    main()
-
-
-This ensures the script runs only when executed directly.
-
-
-
-## 🔄 Full Workflow
-
-text
-Start Script
-   ↓
-Open Website (Playwright)
-   ↓
-Get HTML Content
-   ↓
-Parse HTML (BeautifulSoup)
-   ↓
-Extract Form Fields
-   ↓
-Find Labels Smartly
-   ↓
-Store Data
-   ↓
-Save CSV File
-   ↓
-End
-
-
-## ⚡ Key Concepts Used
-
-* Web Automation
-* HTML Parsing
-* DOM Traversal
-* Data Extraction
-* File Handling (CSV)
 
 ---
 
-## 🧠 Summary
+## 🏷️ Label Detection Logic
 
-This script is a **mini automation tool** that converts any web form into a structured dataset, making it useful for:
+The script intelligently finds labels using:
 
-* Form automation
-* Testing
-* Data entry systems
+1. `<label for="id">`
+2. Parent `<label>` wrapping
+3. Previous sibling text
+4. Grandparent fallback
+5. `aria-label` / `placeholder`
 
 ---
+
+## 📊 Output CSV
+
+```csv
+Field Name, Selector, Type, Your Answer
+Name, #name, text,
+Email, #email, email,
+Country, #country, select,
+```
+
+---
+
+# ✍️ MODULE 2: Automated Form Filler
+
+## 🎯 Purpose
+
+Fill and submit forms automatically using CSV data.
+
+---
+
+## ⚙️ How It Works
+
+### Step 1: Load CSV Data
+
+```python
+fields = load_answers(CSV_FILE)
+```
+
+---
+
+### Step 2: Launch Browser
+
+```python
+browser = p.chromium.launch(headless=False)
+```
+
+---
+
+### Step 3: Loop for Multiple Submissions
+
+```python
+for i in range(1, times + 1):
+```
+
+---
+
+### Step 4: Fill Fields
+
+#### 🟢 Text Input
+
+```python
+element.fill(answer)
+```
+
+#### 🟡 Dropdown
+
+```python
+element.select_option(label=answer)
+```
+
+#### 🔵 Checkbox/Radio
+
+```python
+element.check()
+```
+
+---
+
+### Step 5: Take Screenshots
+
+```python
+page.screenshot(path="form_filled_1.png")
+```
+
+---
+
+### Step 6: Submit Form
+
+```python
+submit_btn.click()
+```
+
+---
+
+### Step 7: Save Post-Submit Screenshot
+
+```python
+page.screenshot(path="form_submitted_1.png")
+```
+
+---
+
+## 📊 Output
+
+For each run:
+
+* ✅ Form filled
+* 🚀 Form submitted
+* 📸 Screenshots saved
+
+---
+
+## 🔁 Execution Flow
+
+```text
+Run Extractor
+   ↓
+Get CSV Template
+   ↓
+Fill "Your Answer" column
+   ↓
+Run Form Filler
+   ↓
+Automated Submissions
+```
+
+---
+
+## ▶️ How to Run
+
+### 1️⃣ Install Dependencies
+
+```bash
+pip install playwright beautifulsoup4
+playwright install
+```
+
+---
+
+### 2️⃣ Run Extractor
+
+```bash
+python extractor.py
+```
+
+---
+
+### 3️⃣ Fill CSV File
+
+* Open `website_structure.csv`
+* Enter values in **Your Answer**
+
+---
+
+### 4️⃣ Run Form Filler
+
+```bash
+python filler.py
+```
+
+---
+
+## 🧠 Key Concepts Covered
+
+* Web scraping
+* Browser automation
+* DOM parsing
+* Data pipelines
+* Error handling
+* Automation workflows
+
+---
+
+## ⚠️ Limitations
+
+* CAPTCHA-protected forms won’t work
+* Dynamic JS-heavy sites may need tweaks
+* Requires valid selectors
+
+---
+
+## 🚀 Future Improvements
+
+* Auto-fill without manual CSV editing
+* AI-based label detection
+* GUI dashboard
+* Multi-site automation
+* Cloud deployment
+
+---
+
+## 🔥 Summary
+
+This project is a **complete automation pipeline**:
+
+✔ Extract → Structure → Fill → Submit
+✔ Minimal manual work
+✔ Highly scalable
+✔ Real-world automation use cases
+
+---
+
+## 👨‍💻 Author
+
+**Rachit Singh**
+
+---
+
+>
